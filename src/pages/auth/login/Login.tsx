@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { getAccessToken } from '../../../services/auth.api.ts';
 import { useNavigate } from 'react-router-dom';
+import { Button, Card, Form, Input } from 'antd';
+import FormItem from 'antd/es/form/FormItem';
+import './login.module.css';
 
 export function Login() {
   const navigate = useNavigate();
@@ -12,7 +15,6 @@ export function Login() {
     e.preventDefault();
 
     try {
-      console.log();
       const { data } = await getAccessToken(username, password);
 
       localStorage.setItem('access_token', data.access_token);
@@ -25,26 +27,31 @@ export function Login() {
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Username</label>
-          <input
-            type="text"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+    <Card className="login-form-card">
+      <Form>
+        <FormItem>
+          <Input
+            size={'large'}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setUsername(e.target.value)
+            }
           />
-        </div>
-        <div>
-          <label>Password</label>
-          <input
+        </FormItem>
+        <FormItem>
+          <Input
+            size={'large'}
             type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setPassword(e.target.value)
+            }
           />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-    </>
+        </FormItem>
+        <FormItem>
+          <Button size={'large'} onClick={handleSubmit} type="primary">
+            Submit
+          </Button>
+        </FormItem>
+      </Form>
+    </Card>
   );
 }
