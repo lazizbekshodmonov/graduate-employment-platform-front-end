@@ -12,10 +12,9 @@ const AuthLayout = () => {
   }, [navigate]);
 
   return (
-    <>
-      <h1>Login</h1>
+    <div className={'w-screen h-screen flex justify-center items-center'}>
       <Outlet />
-    </>
+    </div>
   );
 };
 

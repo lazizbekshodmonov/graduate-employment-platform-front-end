@@ -5,6 +5,10 @@ export type LoginCredentials = {
   password: string;
   grant_type?: GrantTypeEnum;
 };
+export type HemisOauthCredentials = {
+  code: string;
+  redirect_url: string;
+};
 
 export type TokenResponse = {
   access_token: string;

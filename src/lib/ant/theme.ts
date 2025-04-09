@@ -1,7 +1,7 @@
 export default {
   token: {
-    colorPrimary: '#00b96b',
+    colorPrimary: '#515DEF',
     borderRadius: 8,
-    colorBgContainer: '#f6ffed',
+    // colorBgContainer: '#f6ffed',
   },
 };
