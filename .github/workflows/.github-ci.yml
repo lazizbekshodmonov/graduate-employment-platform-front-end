@@ -1,0 +1,94 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build application
+        run: npm run build
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+      
+      - name: Connect to server
+        env:
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USER }}
+        run: ssh -o StrictHostKeyChecking=no $USER@$HOST "echo Connection Successful"
+        
+      - name: Add known hosts
+        env:
+          HOST: ${{ secrets.HOST }}
+        run: ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
+        
+      - name: Deploy to VPS
+        env:
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
+            cd /var/www/graduate-employment-platform-front
+            git pull origin master
+            npm install
+            pm2 stop graduate-employment-platform-front
+            npm run build
+            pm2 start graduate-employment-platform-front || pm2 start dist/main.js --name graduate-employment-platform-front
+          EOF
+
+      - name: Verify Deployment
+        env:
+          HOST: ${{ secrets.HOST }}
+          USER: ${{ secrets.USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
+            pm2 show graduate-employment-platform-front
+          EOF
+          
+      - name: Notify Success
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          START_TIME: ${{ github.event.workflow_run.created_at }}
+        run: |
+          start_time=$(date -d "${START_TIME}" +%s)
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d text="Front End:✅ CI: Build succeeded in ${duration} seconds."
+
+      - name: Notify Failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          START_TIME: ${{ github.event.workflow_run.created_at }}
+        run: |
+          start_time=$(date -d "${START_TIME}" +%s)
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d text="Front End:‼️ CI: Build failed in ${duration} seconds."
