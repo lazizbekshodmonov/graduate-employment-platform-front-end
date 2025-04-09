@@ -46,23 +46,13 @@ jobs:
           USER: ${{ secrets.USER }}
         run: |
           ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
-            cd /var/www/graduate-employment-platform-front
+            cd /var/www/graduate-employment-platform-front-end
             git pull origin master
             npm install
-            pm2 stop graduate-employment-platform-front
             npm run build
-            pm2 start graduate-employment-platform-front || pm2 start dist/main.js --name graduate-employment-platform-front
+            rm -rf /var/www/html/*
+            cp -r dist/* /var/www/html/
           EOF
-
-      - name: Verify Deployment
-        env:
-          HOST: ${{ secrets.HOST }}
-          USER: ${{ secrets.USER }}
-        run: |
-          ssh -o StrictHostKeyChecking=no $USER@$HOST << EOF
-            pm2 show graduate-employment-platform-front
-          EOF
-          
       - name: Notify Success
         if: success()
         env:
